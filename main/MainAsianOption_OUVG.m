@@ -29,9 +29,9 @@ market.currentPrice = 15;
 market.riskFree = 0;
 market.dividend = 0;
 %%%% OUVG %%%
-market.kappaOU = 0.1859; 0.2162;
+market.kappaOU = 0.1859; 
 market.thetaOU = 0.05;
-market.nuOU = 0.4513; 0.256 / 2;
+market.nuOU = 0.4513; 
 market.sigmaOU = 0.203;
 %%%% VG %%%%
 market.theta = 0.1;

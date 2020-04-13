@@ -16,7 +16,7 @@ a = exp(-kappaOU * timeGrid(2:end));
 
 ouGamma = OUGamma(alpha, beta, kappaOU, x_0);
      
-numberOfSimulations = [10000, 40000, 160000, 640000, 2560000]';
+numberOfSimulations = 100000; [10000, 40000, 160000, 640000, 2560000]';
 mean_= (1-a) * alpha / (beta * kappaOU) + x_0 * a;
 variance_ = (1-a.^2) * alpha / (2 * kappaOU * beta^2);
 skewness_ = (1-a.^3) ./ (1-a.^2).^(1.5) * (4/3) * sqrt(2 * kappaOU / alpha);
