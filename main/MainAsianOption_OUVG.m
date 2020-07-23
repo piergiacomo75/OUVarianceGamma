@@ -18,10 +18,11 @@ asianOption.strike = 15;
 asianOption.maturity = 1;
 %% Compute Asian Value
 %% Valuation Parameters
-valuation.nMonths = 12;
-valuation.nStepsPerMonth = 30;
-valuation.dYear = 1;
-numTimeSteps = valuation.nMonths * valuation.nStepsPerMonth * asianOption.maturity;
+delta = 1/360;
+maturity = 1.5;
+forwardStart = 0.5;
+valuation.timeSteps = (forwardStart:delta:maturity)';
+numTimeSteps = numel(valuation.timeSteps);
 
 
 %% Set Market Parameters
@@ -29,14 +30,11 @@ market.currentPrice = 15;
 market.riskFree = 0;
 market.dividend = 0;
 %%%% OUVG %%%
-market.kappaOU = 0.1859; 
+
 market.thetaOU = 0.05;
-market.nuOU = 0.4513; 
-market.sigmaOU = 0.203;
-%%%% VG %%%%
-market.theta = 0.1;
-market.nu = 0.02;
-market.sigma = 0.3;
+market.kappaOU = 0.2162;
+market.nuOU = 0.2560;
+market.sigmaOU = 0.2021;
 
 market.shapeData = ones(numTimeSteps,1);
 market.bidAsk = 0;
@@ -44,18 +42,53 @@ market.fxRate = 1;
 
 numberOfSimulations = [1000, 10000, 20000, 50000, 100000];
 
-priceAlgorithm = zeros(length(numberOfSimulations), 1);
-errPriceAlgorithm = zeros(length(numberOfSimulations), 1);
-timesAlgorithm = zeros(length(numberOfSimulations), 1);
+priceAlgorithmSabino = zeros(length(numberOfSimulations), 1);
+errPriceAlgorithmSabino = zeros(length(numberOfSimulations), 1);
+timesAlgorithmSabino = zeros(length(numberOfSimulations), 1);
+
+incrementMethodString = 'ouvariancegammaincrement';
 
 for s = 1:length(numberOfSimulations)
     valuation.numberOfSimulations = numberOfSimulations(s);
     
-    [assetPrice, errPrice, elapsedTime] = ComputeAsianOption_OUVG(asianOption, market, valuation);
+    [assetPrice, errPrice, elapsedTime] = ComputeAsianOption_OUVG(asianOption, market, valuation, incrementMethodString);
     
-    priceAlgorithm(s) = assetPrice;
-    errPriceAlgorithm(s) = errPrice;
-    timesAlgorithm(s) = elapsedTime; 
+    priceAlgorithmSabino(s) = assetPrice;
+    errPriceAlgorithmSabino(s) = errPrice;
+    timesAlgorithmSabino(s) = elapsedTime; 
     
 end
 
+incrementMethodString = 'ouvariancegammaincrementapprox1';
+
+priceAlgorithmApprox1 = zeros(length(numberOfSimulations), 1);
+errPriceAlgorithmApprox1 = zeros(length(numberOfSimulations), 1);
+timesAlgorithmApprox1 = zeros(length(numberOfSimulations), 1);
+
+for s = 1:length(numberOfSimulations)
+    valuation.numberOfSimulations = numberOfSimulations(s);
+    
+    [assetPrice, errPrice, elapsedTime] = ComputeAsianOption_OUVG(asianOption, market, valuation, incrementMethodString);
+    
+    priceAlgorithmApprox1(s) = assetPrice;
+    errPriceAlgorithmApprox1(s) = errPrice;
+    timesAlgorithmApprox1(s) = elapsedTime; 
+    
+end
+
+incrementMethodString = 'ouvariancegammaincrementapprox2';
+
+priceAlgorithmApprox2 = zeros(length(numberOfSimulations), 1);
+errPriceAlgorithmApprox2 = zeros(length(numberOfSimulations), 1);
+timesAlgorithmApprox2 = zeros(length(numberOfSimulations), 1);
+
+for s = 1:length(numberOfSimulations)
+    valuation.numberOfSimulations = numberOfSimulations(s);
+    
+    [assetPrice, errPrice, elapsedTime] = ComputeAsianOption_OUVG(asianOption, market, valuation, incrementMethodString);
+    
+    priceAlgorithmApprox2(s) = assetPrice;
+    errPriceAlgorithmApprox2(s) = errPrice;
+    timesAlgorithmApprox2(s) = elapsedTime; 
+    
+end

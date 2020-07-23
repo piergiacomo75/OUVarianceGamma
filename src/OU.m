@@ -14,11 +14,11 @@ classdef OU
             deltaGrid = diff(timeGrid);
             numberOfTimeSteps = numel(deltaGrid);
             
-            simulationMethod = ResolveIncrementMethod(simulationMethodStr);
+            incrementMethod = ResolveIncrementMethod(simulationMethodStr);
             trajectory = zeros(numberOfTimeSteps, numberOfSimulations);
             trajectory(1, :) = obj.x_0;
             for t = 1:numberOfTimeSteps
-                increment = simulationMethod.GenerateIncrement(obj, deltaGrid(t), numberOfSimulations);                
+                increment = incrementMethod.GenerateIncrement(obj, deltaGrid(t), numberOfSimulations);                
                 trajectory(t+1, :) = trajectory(t, :) * exp(-obj.kappa * deltaGrid(t)) + increment'; 
             end
             

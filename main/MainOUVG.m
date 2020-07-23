@@ -1,13 +1,15 @@
 % SCRIPT THAT REPRODUCES FIGURE 1 AND TABLE 2
 clear
 close all
-clc
+%clc
 
 addpath(genpath('../src'))
 
 sigma = 0.30;
 kappaOU = 0.20;
 theta = 0.25;
+%theta = 0;
+
 nu = 0.1;
 commonTerm = 0.5 * sqrt(theta^2 + 2 * sigma^2 / nu);
 mu_p = commonTerm + 0.5 * theta;
@@ -15,15 +17,14 @@ mu_n = commonTerm - 0.5 * theta;
 nu_p = mu_p^2 * nu;
 nu_n = mu_n^2 * nu;
 x_0 = 0;
-timeStep = 1/5;
-maturity = 1;
+timeStep = 1.5;
+maturity = 1.5;
 timeGrid = 0:timeStep:maturity;
 a = exp(-kappaOU * timeGrid(2:end));
 
 ouVarianceGamma = OUVG(theta, nu, sigma, kappaOU, x_0);
      
-% numberOfSimulations = 100000; [1000, 10000, 50000, 100000, 500000, 1000000]';
-numberOfSimulations = 100000;[2500, 10000, 40000, 160000, 640000, 2560000]';
+numberOfSimulations = [2500, 10000, 40000, 160000, 640000, 2560000]';
 mean_= x_0 * a + (1 - a) * theta / kappaOU;
 variance_ = (sigma^2 + theta^2 * nu)/ (2 * kappaOU) * (1-a.^2);
 skewness_ = 2 * sqrt(2 * kappaOU) / 3 * (1 - a.^3) ./ (1 - a.^2).^(1.5) * (2 * theta^3 * nu^2 + 3 * sigma^2 * theta * nu) / (sigma^2 + theta^2 * nu)^(3/2);
@@ -32,34 +33,94 @@ kurtosis_ = kappaOU * (1+a.^2) ./ (1-a.^2) * (3 * sigma^4 * nu + 12 * sigma^2 * 
 cumulant_at_one = ouVarianceGamma.CalculateCumulant(1, timeGrid(2:end));
 exponentialMean = exp(cumulant_at_one); 
 
-timeAlgorithm = zeros(numel(numberOfSimulations), 1);
-meanAlgorithm = zeros(numel(numberOfSimulations), numel(timeGrid) - 1);
-varianceAlgorithm = zeros(numel(numberOfSimulations), numel(timeGrid) - 1);
-skewnessAlgorithm = zeros(numel(numberOfSimulations), numel(timeGrid) - 1);
-kurtosisAlgorithm = zeros(numel(numberOfSimulations), numel(timeGrid) - 1);
-exponentialMeanAlgorithm = zeros(numel(numberOfSimulations), numel(timeGrid) - 1);
+timeAlgorithmSabino = zeros(numel(numberOfSimulations), 1);
+meanAlgorithmSabino = zeros(numel(numberOfSimulations), numel(timeGrid) - 1);
+varianceAlgorithmSabino = zeros(numel(numberOfSimulations), numel(timeGrid) - 1);
+skewnessAlgorithmSabino = zeros(numel(numberOfSimulations), numel(timeGrid) - 1);
+kurtosisAlgorithmSabino = zeros(numel(numberOfSimulations), numel(timeGrid) - 1);
+exponentialMeanAlgorithmSabino = zeros(numel(numberOfSimulations), numel(timeGrid) - 1);
 
 for n = 1:numel(numberOfSimulations)
     
-    % Algorithm
+%     Algorithm Sabino
     tic
-    algorithm = ouVarianceGamma.SimulateTrajectory(timeGrid, numberOfSimulations(n), "ouvariancegammaincrement");
-    algorithm(1, :) = [];
-    timeAlgorithm(n) = toc;
+    algorithmSabino = ouVarianceGamma.SimulateTrajectory(timeGrid, numberOfSimulations(n), "ouvariancegammaincrement");
+    algorithmSabino(1, :) = [];
+    timeAlgorithmSabino(n) = toc;    
     
-    meanAlgorithm(n, :) = mean(algorithm, 2);
-    varianceAlgorithm(n, :) = var(algorithm, 0, 2);
-    exponentialMeanAlgorithm(n, :) = mean(exp(algorithm), 2);    
-    skewnessAlgorithm(n, :) = skewness(algorithm, 0, 2);
-    kurtosisAlgorithm(n, :) = kurtosis(algorithm, 0, 2);
-    clear algorithm
-    
-
+    meanAlgorithmSabino(n, :) = mean(algorithmSabino, 2);
+    varianceAlgorithmSabino(n, :) = var(algorithmSabino, 0, 2);
+    exponentialMeanAlgorithmSabino(n, :) = mean(exp(algorithmSabino), 2);    
+    skewnessAlgorithmSabino(n, :) = skewness(algorithmSabino, 0, 2);
+    kurtosisAlgorithmSabino(n, :) = kurtosis(algorithmSabino, 0, 2);
+    clear algorithmSabino
+      
 end
-percErrMean = 1 - mean_ ./ meanAlgorithm;
-percErrVariance = 1 - variance_ ./ varianceAlgorithm;
-percErrSkewness = 1 - skewness_ ./ skewnessAlgorithm;
-percErrKurtosis = 1 - kurtosis_ ./ kurtosisAlgorithm;
-percErrExpMean = 1 - exponentialMean ./ exponentialMeanAlgorithm;
+
+percErrMeanSabino = 1 - meanAlgorithmSabino./ mean_;
+percErrVarianceSabino = 1 - varianceAlgorithmSabino ./ variance_;
+percErrSkewnessSabino = 1 - skewnessAlgorithmSabino ./ skewness_;
+percErrKurtosisSabino = 1 - kurtosisAlgorithmSabino./ kurtosis_ ;
+percErrExpMeanSabino = 1 - exponentialMean ./ exponentialMeanAlgorithmSabino;
+
+timeAlgorithmApprox1 = zeros(numel(numberOfSimulations), 1);
+meanAlgorithmApprox1 = zeros(numel(numberOfSimulations), numel(timeGrid) - 1);
+varianceAlgorithmApprox1 = zeros(numel(numberOfSimulations), numel(timeGrid) - 1);
+skewnessAlgorithmApprox1 = zeros(numel(numberOfSimulations), numel(timeGrid) - 1);
+kurtosisAlgorithmApprox1 = zeros(numel(numberOfSimulations), numel(timeGrid) - 1);
+exponentialMeanAlgorithmApprox1 = zeros(numel(numberOfSimulations), numel(timeGrid) - 1);
+
+for n = 1:numel(numberOfSimulations)
+    
+%     Algorithm Benth, Approx1
+    tic
+    algorithmApprox1 = ouVarianceGamma.SimulateTrajectory(timeGrid, numberOfSimulations(n), "ouvariancegammaincrementapprox1");
+    algorithmApprox1(1, :) = [];
+    timeAlgorithmApprox1(n) = toc;    
+    
+    meanAlgorithmApprox1(n, :) = mean(algorithmApprox1, 2);
+    varianceAlgorithmApprox1(n, :) = var(algorithmApprox1, 0, 2);
+    exponentialMeanAlgorithmApprox1(n, :) = mean(exp(algorithmApprox1), 2);    
+    skewnessAlgorithmApprox1(n, :) = skewness(algorithmApprox1, 0, 2);
+    kurtosisAlgorithmApprox1(n, :) = kurtosis(algorithmApprox1, 0, 2);
+    clear algorithmApprox1
+      
+end
+
+percErrMeanApprox1 = 1 - meanAlgorithmApprox1 ./ mean_ ;
+percErrVarianceApprox1 = 1 - varianceAlgorithmApprox1 ./ variance_ ;
+percErrSkewnessApprox1 = 1 - skewnessAlgorithmApprox1 ./ skewness_ ;
+percErrKurtosisApprox1 = 1 - kurtosisAlgorithmApprox1 ./ kurtosis_ ;
+percErrExpMeanApprox1 = 1 - exponentialMeanAlgorithmApprox1 ./ exponentialMean ;
+
+timeAlgorithmApprox2 = zeros(numel(numberOfSimulations), 1);
+meanAlgorithmApprox2 = zeros(numel(numberOfSimulations), numel(timeGrid) - 1);
+varianceAlgorithmApprox2 = zeros(numel(numberOfSimulations), numel(timeGrid) - 1);
+skewnessAlgorithmApprox2 = zeros(numel(numberOfSimulations), numel(timeGrid) - 1);
+kurtosisAlgorithmApprox2 = zeros(numel(numberOfSimulations), numel(timeGrid) - 1);
+exponentialMeanAlgorithmApprox2 = zeros(numel(numberOfSimulations), numel(timeGrid) - 1);
+
+for n = 1:numel(numberOfSimulations)
+    
+%     Algorithm Cufaro, Approx2
+    tic
+    algorithmApprox2 = ouVarianceGamma.SimulateTrajectory(timeGrid, numberOfSimulations(n), "ouvariancegammaincrementapprox2");
+    algorithmApprox2(1, :) = [];
+    timeAlgorithmApprox2(n) = toc;    
+    
+    meanAlgorithmApprox2(n, :) = mean(algorithmApprox2, 2);
+    varianceAlgorithmApprox2(n, :) = var(algorithmApprox2, 0, 2);
+    exponentialMeanAlgorithmApprox2(n, :) = mean(exp(algorithmApprox2), 2);    
+    skewnessAlgorithmApprox2(n, :) = skewness(algorithmApprox2, 0, 2);
+    kurtosisAlgorithmApprox2(n, :) = kurtosis(algorithmApprox2, 0, 2);
+    clear algorithmApprox2
+      
+end
+
+percErrMeanApprox2 = 1 - meanAlgorithmApprox2 ./ mean_ ;
+percErrVarianceApprox2 = 1 - varianceAlgorithmApprox2 ./ variance_ ;
+percErrSkewnessApprox2 = 1 - skewnessAlgorithmApprox2 ./ skewness_ ;
+percErrKurtosisApprox2 = 1 - kurtosisAlgorithmApprox2 ./ kurtosis_ ;
+percErrExpMeanApprox2 = 1 - exponentialMeanAlgorithmApprox2 ./ exponentialMean;
 
 rmpath(genpath('../src'))
